@@ -13,9 +13,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: current
-      - run: gradle build
-        working-directory: myclient
+      - name: Build
+        run: |
+          DIR=$(dirname "$(find . -name settings.gradle -not -path './.git/*' | head -n1)")
+          echo "Building in: $DIR"
+          cd "$DIR"
+          gradle build
       - uses: actions/upload-artifact@v4
         with:
           name: myclient-jar
-          path: myclient/build/libs/*.jar
+          path: "**/build/libs/*.jar"
