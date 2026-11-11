@@ -49,7 +49,7 @@ public class MyClient implements ClientModInitializer {
 
     private static void extractHud(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
-        if (!hudEnabled || mc.player == null || mc.options.hideGui) return;
+        if (!hudEnabled || mc.player == null) return;
 
         int x = 6;
         int y = 6;
