@@ -13,7 +13,7 @@ public final class Performance {
         boolean on = Settings.PERF_ON[index];
         switch (index) {
             case Settings.FOLIAGE -> {
-                if (mc.levelRenderer != null) mc.levelRenderer.allChanged();
+                if (mc.levelRenderer != null) mc.levelRenderer.invalidateCompiledGeometry();
             }
             case Settings.PARTICLES -> mc.options.particles().set(on ? ParticleStatus.MINIMAL : ParticleStatus.ALL);
             case Settings.CLOUDS -> mc.options.cloudStatus().set(on ? CloudStatus.OFF : CloudStatus.FANCY);
