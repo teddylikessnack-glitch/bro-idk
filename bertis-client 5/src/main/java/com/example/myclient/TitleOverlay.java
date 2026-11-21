@@ -16,6 +16,9 @@ public final class TitleOverlay {
     private static final long CYCLE = 16000;
     private static final long WALK = 9000;
 
+    // Set by the background mixin: the screen whose background the scene was drawn for.
+    public static volatile Object sceneOwner;
+
     private TitleOverlay() {}
 
     private static void rect(GuiGraphicsExtractor g, int x, int y, int w, int h, int c) {
@@ -137,55 +140,60 @@ public final class TitleOverlay {
         int sh = mc.getWindow().getGuiScaledHeight();
         int accent = Settings.accentColor();
 
-        drawScene(mc, g);
+        // Normal case: the mixin already drew the scene BEHIND the screen, so the vanilla logo,
+        // Mod Menu, Essential etc. are all untouched. Fallback: cover the screen ourselves.
+        boolean byMixin = sceneOwner == screen;
+        if (!byMixin) drawScene(mc, g);
 
-        // ---- sort the screen's widgets ----
         List<AbstractWidget> styled = new ArrayList<>();
-        List<AbstractWidget> others = new ArrayList<>(); // other mods' widgets (Essential etc.)
+        List<AbstractWidget> others = new ArrayList<>();
         for (GuiEventListener l : screen.children()) {
             if (!(l instanceof AbstractWidget w)) continue;
-            String key = UiStyle.key(w);
-            if (UiStyle.isMainMenuButton(key)) {
-                styled.add(w);
-            } else if (key.equals("menu.online") || key.startsWith("options.language")
-                    || key.startsWith("options.accessibility")
-                    || w.getClass().getSimpleName().equals("PlainTextButton")) {
-                w.visible = false;
-            } else if (w.visible) {
-                others.add(w);
-            }
-        }
-
-        int topY = sh / 4;
-        if (!styled.isEmpty()) {
-            topY = Integer.MAX_VALUE;
-            for (AbstractWidget w : styled) topY = Math.min(topY, w.getY());
-        } else if (!others.isEmpty()) {
-            topY = Integer.MAX_VALUE;
-            for (AbstractWidget w : others) topY = Math.min(topY, w.getY());
+            if (UiStyle.isMainMenuButton(UiStyle.key(w))) styled.add(w);
+            else if (w.visible) others.add(w);
         }
 
         for (AbstractWidget w : styled) UiStyle.paint(g, mc, w, mx, my);
 
-        // ---- big title ----
+        if (byMixin) {
+            // keep the Bertis title: a slim banner at the very top, above the vanilla logo
+            drawTitleBlock(mc, g, 4, 2, false);
+            return;
+        }
+
+        // ---- fallback only: our own title + redraw every other widget on top ----
+        int topY = sh / 4;
+        if (!styled.isEmpty()) {
+            topY = Integer.MAX_VALUE;
+            for (AbstractWidget w : styled) topY = Math.min(topY, w.getY());
+        }
+        int scale = sh >= 240 ? 3 : 2;
+        int titleH = mc.font.lineHeight * scale;
+        drawTitleBlock(mc, g, Math.max(8, topY - titleH - 24), scale, true);
+
+        for (AbstractWidget w : others) w.extractRenderState(g, mx, my, 0.0f);
+    }
+
+    // "Bertis Client" title in a dark box with an accent line; optional "by CayL12" underneath.
+    private static void drawTitleBlock(Minecraft mc, GuiGraphicsExtractor g, int ty, int scale, boolean byLine) {
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int accent = Settings.accentColor();
         String name = "Bertis Client";
-        int s = sh >= 240 ? 3 : 2;
-        int titleW = mc.font.width(name) * s;
-        int titleH = mc.font.lineHeight * s;
+        int titleW = mc.font.width(name) * scale;
+        int titleH = mc.font.lineHeight * scale;
         int tx = (sw - titleW) / 2;
-        int ty = Math.max(8, topY - titleH - 24);
-        g.fill(tx - 10, ty - 6, tx + titleW + 10, ty + titleH + 18, 0x80000000);
-        g.fill(tx - 10, ty - 6, tx + titleW + 10, ty - 4, accent);
+        int extra = byLine ? 18 : 4;
+        g.fill(tx - 10, ty - 3, tx + titleW + 10, ty + titleH + extra, 0x80000000);
+        g.fill(tx - 10, ty - 3, tx + titleW + 10, ty - 1, accent);
         var pose = g.pose();
         pose.pushMatrix();
         pose.translate((float) tx, (float) ty);
-        pose.scale((float) s, (float) s);
+        pose.scale((float) scale, (float) scale);
         g.text(mc.font, name, 0, 0, accent, true);
         pose.popMatrix();
-        String by = "by CayL12";
-        g.text(mc.font, by, (sw - mc.font.width(by)) / 2, ty + titleH + 4, 0xFFCCCCCC, true);
-
-        // other mods' widgets keep their own look, drawn on top of the scene
-        for (AbstractWidget w : others) w.extractRenderState(g, mx, my, 0.0f);
+        if (byLine) {
+            String by = "by CayL12";
+            g.text(mc.font, by, (sw - mc.font.width(by)) / 2, ty + titleH + 4, 0xFFCCCCCC, true);
+        }
     }
 }

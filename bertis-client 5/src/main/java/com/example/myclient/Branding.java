@@ -91,7 +91,7 @@ public final class Branding {
         int textW = Math.max(mc.font.width(name), mc.font.width(by));
         int total = duckPx + 8 + textW;
         int x = sw - total - 14;
-        int y = sh - duckPx - 12;
+        int y = sh - duckPx - (title ? 22 : 12);
 
         g.fill(x - 8, y - 4, x + total + 8, y + duckPx + 4, 0x70000000);
         g.fill(x + total + 6, y - 4, x + total + 8, y + duckPx + 4, Settings.accentColor());
