@@ -29,10 +29,10 @@ public final class Foliage {
     public static boolean isFoliage(Block block) {
         return CACHE.computeIfAbsent(block, Foliage::compute);
     }
-
     private static boolean compute(Block block) {
         BlockState state = block.defaultBlockState();
-        if (state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)) return true;
-        return PLANTS.contains(BuiltInRegistries.BLOCK.getKey(block).getPath());
+        if (state.is(BlockTags.FLOWERS)) return true;
+        String path = BuiltInRegistries.BLOCK.getKey(block).getPath();
+        return PLANTS.contains(path) || path.endsWith("_sapling");
     }
 }
