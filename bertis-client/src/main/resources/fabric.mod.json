@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "myclient",
+  "version": "${version}",
+  "name": "Bertis Client",
+  "description": "Bertis Client: a Lunar-style HUD and mod menu. Press Right Shift in-game.",
+  "authors": ["Berti"],
+  "license": "MIT",
+  "icon": "assets/myclient/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.example.myclient.MyClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
