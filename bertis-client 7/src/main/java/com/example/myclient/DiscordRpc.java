@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 // SETUP: create an app at https://discord.com/developers/applications named "Bertis Client",
 // paste its Application ID below, and upload the logo under Rich Presence > Art Assets as "logo".
 public final class DiscordRpc {
-    private static final String CLIENT_ID = "PUT_YOUR_APPLICATION_ID_HERE";
+    private static final String CLIENT_ID = "1573796694720782487";
     private static final String LOGO_KEY = "logo";
     private static final long MIN_INTERVAL_MS = 15_000; // Discord rate limit
 
