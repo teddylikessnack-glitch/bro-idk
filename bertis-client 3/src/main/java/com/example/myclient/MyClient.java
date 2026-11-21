@@ -60,6 +60,7 @@ public class MyClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenu.consumeClick()) client.setScreenAndShow(new BertisMenu());
             while (toggleHud.consumeClick()) hudVisible = !hudVisible;
+                        Performance.tick(client);
 
             if (client.player == null) {
                 hasLast = false;
