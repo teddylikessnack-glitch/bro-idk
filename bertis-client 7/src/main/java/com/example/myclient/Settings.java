@@ -26,11 +26,11 @@ public final class Settings {
 
     // ---- Per-module options (opened with the "Edit" chip on a card) ----
     public static final String[][] OPT_NAMES = {
-            {}, {}, {"Mode", "Decimals"}, {}, {"Unit"}, {"Format"}, {"Display"}, {"Held item"}, {"Mouse buttons"}
+            {}, {}, {"Mode", "Decimals", "Biome"}, {}, {"Unit"}, {"Format"}, {"Display"}, {"Held item"}, {"Mouse buttons"}
     };
     public static final String[][][] OPT_CHOICES = {
             {}, {},
-            {{"XYZ", "Y only", "XZ only"}, {"0", "1", "2"}},
+            {{"XYZ", "Y only", "XZ only"}, {"0", "1", "2"}, {"Show", "Hide"}},
             {},
             {{"Blocks/sec", "km/h"}},
             {{"24 hour", "12 hour"}},

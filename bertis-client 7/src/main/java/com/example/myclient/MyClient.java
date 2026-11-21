@@ -137,6 +137,10 @@ public class MyClient implements ClientModInitializer {
                 default -> String.format(Locale.ROOT, "XYZ: " + f + " / " + f + " / " + f, px, py, pz);
             };
             main.add(new Entry(text, accent));
+
+            if (Settings.opt(Settings.COORDS, 2) == 0 && mc.level != null) {
+                main.add(new Entry("Biome: " + biomeName(mc), accent));
+            }
         }
 
         if (Settings.on(Settings.DIRECTION)) {
@@ -189,35 +193,67 @@ public class MyClient implements ClientModInitializer {
             }
         }
 
-        // ---- gear stack on the opposite side ----
+        // ---- armor + held item panel on the opposite side ----
         if (Settings.on(Settings.ARMOR)) {
-            List<Entry> gear = new ArrayList<>();
-            for (EquipmentSlot slot : ARMOR) addItem(gear, mc.player.getItemBySlot(slot), accent);
-            if (Settings.opt(Settings.ARMOR, 0) == 0) addItem(gear, mc.player.getMainHandItem(), accent);
-
-            int gearH = gear.size() * boxH;
-            int gy = bottom ? sh - 6 - gearH : 6;
-            for (Entry e : gear) {
-                drawBox(g, mc, e.text(), !right, sw, gy, e.accent());
-                gy += boxH;
+            List<ItemStack> gear = new ArrayList<>();
+            for (EquipmentSlot slot : ARMOR) {
+                ItemStack st = mc.player.getItemBySlot(slot);
+                if (!st.isEmpty()) gear.add(st);
             }
+            if (Settings.opt(Settings.ARMOR, 0) == 0) {
+                ItemStack held = mc.player.getMainHandItem();
+                if (!held.isEmpty()) gear.add(held);
+            }
+            drawGear(g, mc, gear, !right, bottom, sw, sh);
         }
     }
 
-    private static void addItem(List<Entry> out, ItemStack stack, int defaultAccent) {
-        if (stack.isEmpty()) return;
+    // Clean gear panel: item icon, slim durability bar, percentage.
+    private static void drawGear(GuiGraphicsExtractor g, Minecraft mc, List<ItemStack> gear,
+                                 boolean rightSide, boolean bottom, int sw, int sh) {
+        if (gear.isEmpty()) return;
+        int rowH = 18, gap = 2, barW = 36;
+        int labelW = Math.max(mc.font.width("100%"), mc.font.width("x64"));
+        int w = 6 + 16 + 5 + barW + 5 + labelW + 6;
+        int totalH = gear.size() * (rowH + gap) - gap;
+        int x = rightSide ? sw - 6 - w : 6;
+        int y = bottom ? sh - 6 - totalH : 6;
 
-        String text = stack.getHoverName().getString();
-        int accent = defaultAccent;
-        if (stack.isDamageableItem()) {
-            int max = stack.getMaxDamage();
-            int left = max - stack.getDamageValue();
-            text += " " + left + "/" + max;
-            double frac = (double) left / max;
-            accent = frac > 0.5 ? 0xFF55FF55 : (frac > 0.2 ? 0xFFFFFF55 : 0xFFFF5555);
-        } else if (stack.getCount() > 1) {
-            text += " x" + stack.getCount();
+        for (ItemStack st : gear) {
+            int stripe = Settings.accentColor();
+            int bx = x + 6 + 16 + 5;
+            g.fill(x, y, x + w, y + rowH, Settings.bgColor());
+
+            if (st.isDamageableItem()) {
+                int max = Math.max(1, st.getMaxDamage());
+                double frac = Math.max(0.0, Math.min(1.0, (double) (max - st.getDamageValue()) / max));
+                stripe = frac > 0.5 ? 0xFF55FF55 : (frac > 0.2 ? 0xFFFFFF55 : 0xFFFF5555);
+                g.fill(bx, y + 7, bx + barW, y + 11, 0xFF222222);
+                g.fill(bx, y + 7, bx + (int) Math.round(barW * frac), y + 11, stripe);
+                String pct = Math.round(frac * 100) + "%";
+                g.text(mc.font, pct, bx + barW + 5, y + (rowH - mc.font.lineHeight) / 2 + 1,
+                        0xFFFFFFFF, Settings.textShadow);
+            } else if (st.getCount() > 1) {
+                g.text(mc.font, "x" + st.getCount(), bx, y + (rowH - mc.font.lineHeight) / 2 + 1,
+                        0xFFFFFFFF, Settings.textShadow);
+            }
+
+            g.fill(x, y, x + 2, y + rowH, stripe);
+            g.item(st, x + 6, y + 1);
+            y += rowH + gap;
         }
-        out.add(new Entry(text, accent));
+    }
+
+    private static String biomeName(Minecraft mc) {
+        String id = mc.level.getBiome(mc.player.blockPosition()).getRegisteredName();
+        int colon = id.indexOf(':');
+        if (colon >= 0) id = id.substring(colon + 1);
+        StringBuilder out = new StringBuilder();
+        for (String word : id.split("_")) {
+            if (word.isEmpty()) continue;
+            if (out.length() > 0) out.append(' ');
+            out.append(word.substring(0, 1).toUpperCase(Locale.ROOT)).append(word.substring(1));
+        }
+        return out.toString();
     }
 }
