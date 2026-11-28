@@ -18,6 +18,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
+import java.lang.reflect.Method;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -46,13 +47,15 @@ public final class Modules {
 
         void apply(Options o) {
             OptionInstance<T> opt = getter.apply(o);
+            if (opt == null) return; // option doesn't exist in this Minecraft version
             saved = opt.get();
             opt.set(chooser.apply(saved));
         }
 
         void restore(Options o) {
             if (saved != null) {
-                getter.apply(o).set(saved);
+                OptionInstance<T> opt = getter.apply(o);
+                if (opt != null) opt.set(saved);
                 saved = null;
             }
         }
@@ -66,6 +69,31 @@ public final class Modules {
     static <E extends Enum<E>> Tweak<E> enumTweak(Function<Options, OptionInstance<E>> getter, String name) {
         return new Tweak<>(getter, cur -> {
             for (E e : cur.getDeclaringClass().getEnumConstants()) if (e.name().equals(name)) return e;
+            return cur;
+        });
+    }
+
+    /**
+     * Turns on "Fast Graphics" whatever the option is called/typed in this Minecraft version.
+     * Looks the option up by method name at runtime; does nothing if none of the names exist.
+     */
+    @SuppressWarnings("unchecked")
+    static Tweak<Object> fastGraphicsTweak(String... methodNames) {
+        Function<Options, OptionInstance<Object>> getter = o -> {
+            for (String n : methodNames) {
+                try {
+                    Method m = Options.class.getMethod(n);
+                    if (m.invoke(o) instanceof OptionInstance<?> oi) return (OptionInstance<Object>) oi;
+                } catch (ReflectiveOperationException | RuntimeException ignored) {}
+            }
+            return null;
+        };
+        return new Tweak<>(getter, cur -> {
+            if (cur instanceof Boolean) return Boolean.TRUE; // boolean "fast graphics" toggle
+            if (cur instanceof Enum<?> e) {                   // enum-style option: pick FAST
+                for (Object c : e.getDeclaringClass().getEnumConstants())
+                    if (((Enum<?>) c).name().equals("FAST")) return c;
+            }
             return cur;
         });
     }
@@ -97,7 +125,8 @@ public final class Modules {
         }.at(Corner.TOP_LEFT));
 
         // ===================== PERFORMANCE =====================
-        add(new TweakModule("Fast Graphics", "No clouds and simple lighting for more FPS. Restored when disabled.",
+        add(new TweakModule("Fast Graphics", "Fast graphics, no clouds, simple lighting. Restored when disabled.",
+                fastGraphicsTweak("fastGraphics", "graphicsMode", "graphicsPreset"),
                 enumTweak(Options::cloudStatus, "OFF"),
                 tweak(Options::ambientOcclusion, cur -> false)));
 

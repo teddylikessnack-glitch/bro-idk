@@ -16,7 +16,7 @@ import net.minecraft.util.Mth;
 public class BearClient implements ClientModInitializer {
     public static final String MOD_ID = "bearclient";
     public static final String NAME = "Bear Client";
-    public static final String VERSION = "1.1.2";
+    public static final String VERSION = "1.1.3";
     public static final String MC_VERSION = "26.3";
 
     private static final float[] FRAMES = new float[120];
