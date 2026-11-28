@@ -1,0 +1,29 @@
+plugins {
+    // Minecraft 26.1+ is unobfuscated: use the non-remapping Loom plugin id, no mappings line.
+    id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = 'dev.bearclient'
+base { archivesName = 'bearclient' }
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    // plain configurations (not modImplementation) because there is no remapping any more
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") { expand "version": inputs.properties.version }
+}
+
+tasks.withType(JavaCompile).configureEach { it.options.release = 25 }
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
